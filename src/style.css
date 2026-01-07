@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+/* @layer utilities {
+  .wm-vertical-rl {
+    writing-mode: vertical-rl;
+  }
+
+  .wm-vertical-lr {
+    writing-mode: vertical-lr;
+  }
+
+  .wm-horizontal-tb {
+    writing-mode: horizontal-tb;
+  }
+}
+
+@layer components {
+  .color-item {
+    @apply h-8 rounded-md border-2 border-black cursor-grab;
+  }
+
+  .marker {
+    @apply absolute left-1/2 w-4 h-4 rounded-full
+           -translate-x-1/2 cursor-pointer
+           border-2 border-black;
+  }
+} */
