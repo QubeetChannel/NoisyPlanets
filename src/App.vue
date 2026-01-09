@@ -9,6 +9,6 @@
 
 
   <TresCanvas clear-color="#00042e" window-size>
-    <!-- <Scene /> -->
+    <Scene />
   </TresCanvas>
 </template>

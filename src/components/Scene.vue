@@ -9,11 +9,7 @@
 
   <Camera />
 
-  <Planet 
-    :seed="42" 
-    :frequency="2"
-    :amplitude="0.1"
-  />
+  <Planet />
 
 
   <!-- <TresAxesHelper /> -->

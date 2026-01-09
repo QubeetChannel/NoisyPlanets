@@ -28,8 +28,6 @@
     frequency: 50,
     amplitude: 50,
   });
-
-  console.log(ColorLayers)
 </script>
 
 <template>
@@ -48,7 +46,7 @@
       ">Settings</section>
 
       <Parameters />
-      <Colors v-model:colorLayers="ColorLayers"/>
+      <!-- <Colors v-model:colorLayers="ColorLayers"/> -->
     </div>
   </div>
 </template>
