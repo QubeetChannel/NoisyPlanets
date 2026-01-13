@@ -8,7 +8,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { usePlanet } from '../composables/usePlanet'
 import { SceneController } from '../scripts/SceneController'
-import { createStarLight } from './createStarLight.ts'
+import { createSun } from './SunObject.ts'
 
 const ThreeJScontainer = ref<HTMLDivElement | null>(null)
 const { planet, status } = usePlanet()
@@ -34,9 +34,14 @@ function resize() {
 onMounted(() => {
   sceneController = new SceneController()
 
+  sceneController.add(new THREE.GridHelper(10, 10));
+  sceneController.add(new THREE.AxesHelper(6));
+
   // Scene
-  sceneController.add(createStarLight({intensity: 2, color: '#FF0000'}))
+  sceneController.add(createSun({position:[5,3,-5], intensity: 2, color: '#FFFFFF'}))
   
+
+
   // Renderer
   renderer = new THREE.WebGLRenderer({ antialias: true })
   ThreeJScontainer.value!.appendChild(renderer.domElement)
