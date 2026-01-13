@@ -1,68 +1,80 @@
 <template>
-  <div ref="container" class="w-screen h-screen overflow-hidden"></div>
+  <div ref="ThreeJScontainer" class="w-screen h-screen overflow-hidden"></div>
 </template>
 
 <script setup lang="ts">
-  console.log('Файл Scene / загрузка div')
-  import * as THREE from 'three'
-  import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
-  import { usePlanet } from '../composables/usePlanet.ts'
+import * as THREE from 'three'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { usePlanet } from '../composables/usePlanet'
+import { SceneController } from '../scripts/SceneController'
+import { createStarLight } from './createStarLight.ts'
 
-  const container = ref<HTMLDivElement | null>(null)
-  const { planet, status } = usePlanet()
+const ThreeJScontainer = ref<HTMLDivElement | null>(null)
+const { planet, status } = usePlanet()
 
-  let scene: THREE.Scene
-  let camera: THREE.PerspectiveCamera
-  let renderer: THREE.WebGLRenderer
+let camera: THREE.PerspectiveCamera
+let renderer: THREE.WebGLRenderer
+let controls: OrbitControls
+let sceneController: SceneController
 
-  function resize() {
-    if (!container.value) return
+function resize() {
+  if (!ThreeJScontainer.value) return
 
-    const width = container.value.clientWidth
-    const height = container.value.clientHeight
+  const width = ThreeJScontainer.value.clientWidth
+  const height = ThreeJScontainer.value.clientHeight
 
-    camera.aspect = width / height
-    camera.updateProjectionMatrix()
-    renderer.setSize(width, height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  camera.aspect = width / height
+  camera.updateProjectionMatrix()
+
+  renderer.setSize(width, height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+}
+
+onMounted(() => {
+  sceneController = new SceneController()
+
+  // Scene
+  sceneController.add(createStarLight({intensity: 2, color: '#FF0000'}))
+  
+  // Renderer
+  renderer = new THREE.WebGLRenderer({ antialias: true })
+  ThreeJScontainer.value!.appendChild(renderer.domElement)
+  
+  // OrbitControls
+  camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100)
+  camera.position.set(0, 0, 3)
+  controls = new OrbitControls(camera, renderer.domElement)
+  controls.enableDamping = true      // плавность
+  controls.dampingFactor = 0.05
+  controls.enablePan = false         // обычно для планет отключают
+  controls.minDistance = 1.5
+  controls.maxDistance = 6
+
+
+  resize()
+  window.addEventListener('resize', resize)
+
+  animate()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', resize)
+
+  controls?.dispose()
+  renderer?.dispose()
+})
+
+watch(status, () => {
+  if (status.value === 'ready' && planet.value) {
+    sceneController.add(planet.value.mesh)
   }
+})
 
-  onMounted(() => {
-    // Создание сцены
-    scene = new THREE.Scene()
+function animate() {
+  requestAnimationFrame(animate)
 
-    // Камера
-    camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100)
-    camera.position.z = 3
-
-    // Renderer
-    renderer = new THREE.WebGLRenderer({ antialias: true })
-    container.value!.appendChild(renderer.domElement)
-
-    // Свет
-    const light = new THREE.DirectionalLight(0xffffff, 1)
-    light.position.set(3, 3, 3)
-    scene.add(light)
-
-    // Resize
-    resize()
-    window.addEventListener('resize', resize)
-
-    animate()
-  })
-
-  onBeforeUnmount(() => {
-    window.removeEventListener('resize', resize)
-  })
-
-  watch(status, () => {
-    if (status.value === 'ready' && planet.value) {
-      scene.add(planet.value.mesh)
-    }
-  })
-
-  function animate() {
-    requestAnimationFrame(animate)
-    renderer.render(scene, camera)
-  }
+  controls.update() // обязательно при enableDamping
+  renderer.render(sceneController.scene, camera)
+}
 </script>
