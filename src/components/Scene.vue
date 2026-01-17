@@ -1,5 +1,5 @@
 <template>
-  <div ref="ThreeJScontainer" class="w-screen h-screen overflow-hidden"></div>
+  <div ref="ThreeJScontainer"></div>
 </template>
 
 <script setup lang="ts">
@@ -8,7 +8,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { usePlanet } from '../composables/usePlanet'
 import { SceneController } from '../scripts/SceneController'
-import { createSun } from './SunObject.ts'
+import { createStar } from './Star.ts'
+import { createCamera } from './Camera.ts'
 
 const ThreeJScontainer = ref<HTMLDivElement | null>(null)
 const { planet, status } = usePlanet()
@@ -37,25 +38,14 @@ onMounted(() => {
   sceneController.add(new THREE.GridHelper(10, 10));
   sceneController.add(new THREE.AxesHelper(6));
 
-  // Scene
-  sceneController.add(createSun({position:[5,3,-5], intensity: 2, color: '#FFFFFF'}))
-  
+  sceneController.add(createStar({position:[5,3,-5], intensity: 2, starColor: '#FFFF00'}))
 
-
-  // Renderer
   renderer = new THREE.WebGLRenderer({ antialias: true })
   ThreeJScontainer.value!.appendChild(renderer.domElement)
   
-  // OrbitControls
-  camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100)
-  camera.position.set(0, 0, 3)
-  controls = new OrbitControls(camera, renderer.domElement)
-  controls.enableDamping = true      // плавность
-  controls.dampingFactor = 0.05
-  controls.enablePan = false         // обычно для планет отключают
-  controls.minDistance = 1.5
-  controls.maxDistance = 6
-
+  const { camera: createdCamera, controls: createdControls } = createCamera(renderer.domElement, {})
+  camera = createdCamera
+  controls = createdControls
 
   resize()
   window.addEventListener('resize', resize)
@@ -72,14 +62,14 @@ onBeforeUnmount(() => {
 
 watch(status, () => {
   if (status.value === 'ready' && planet.value) {
-    sceneController.add(planet.value.mesh)
+    sceneController.add(planet.value.mesh);
   }
 })
 
 function animate() {
-  requestAnimationFrame(animate)
+  requestAnimationFrame(animate);
 
-  controls.update() // обязательно при enableDamping
-  renderer.render(sceneController.scene, camera)
+  controls.update();
+  renderer.render(sceneController.scene, camera);
 }
 </script>
