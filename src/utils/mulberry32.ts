@@ -1,3 +1,7 @@
+/**
+ * Mulberry32 PRNG (Pseudo-Random Number Generator)
+ * Генерирует псевдослучайные числа для детерминированной генерации
+ */
 function mulberry32(a: number) {
   return function() {
     let t = (a += 0x6D2B79F5)

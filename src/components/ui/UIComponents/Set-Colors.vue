@@ -33,9 +33,6 @@
         " :style="{ display: `${ColorLayers.length >= 10 ? 'none' : 'block'}`}">Add layer</button>
       </div>
 
-
-
-
       <!-- RIGHT -->
       <div class="flex flex-col items-center">
         <div ref="bar" class="relative w-10 min-h-80 h-full border-x-3 border-y-5 border-black">
@@ -54,108 +51,40 @@
       </div>
     </div>
 
-    <button class="
-      w-full px-4 py-2 rounded-2xl mt-auto cursor-pointer
-      bg-slate-700 hover:bg-slate-900 
-      font-bold text-center
-      transition-all duration-50 ease-in-out
-      ">Apply colors</button>
+    <button 
+      @click="emit('apply')"
+      class="
+        w-full px-4 py-2 rounded-2xl mt-auto cursor-pointer
+        bg-slate-700 hover:bg-slate-900 
+        font-bold text-center
+        transition-all duration-50 ease-in-out
+      "
+    >Apply colors</button>
   </section>
 </template>
 
-
-
-
-
-
 <script setup lang="ts">
-  // import { ref, computed } from 'vue';
-  // import getRandomColor from '../Scripts/getRandomColor.ts';
-
-  // type ColorLayer = {
-  //   color: string
-  //   position: number
-  // }
-
-  // const props = defineProps<{
-  //   colorLayers: ColorLayer[]
-  // }>()
-
-  // const emit = defineEmits<{
-  //   (e: 'update:colorLayers', value: ColorLayer[]): void
-  // }>()
-
-  // const ColorLayers = ref<ColorLayer[]>([...props.colorLayers])
-  
-
-  // const bar = ref<HTMLElement | null>(null)
-  // const draggingIndex = ref<number | null>(null)
-
-  // const gradientStyle = computed(() => {
-  //   const stops = [...ColorLayers.value]
-  //     .sort((a, b) => a.position - b.position)
-  //     .map(c => `${c.color} ${c.position * 100}%`)
-  //     .join(', ');
-  //   return `linear-gradient(to top, ${stops})`;
-  // });
-
-  // function startDrag(index: number, e: PointerEvent) {
-  //   draggingIndex.value = index
-  //   e.target.setPointerCapture(e.pointerId);
-
-  //   window.addEventListener('pointermove', onDrag);
-  //   window.addEventListener('pointerup', stopDrag);
-  // }
-
-  // function onDrag(e: PointerEvent) {
-  //   if (draggingIndex.value === null || !bar.value) return;
-
-  //   const rect = bar.value.getBoundingClientRect();
-  //   let y = e.clientY - rect.top;
-  //   y = Math.max(0, Math.min(rect.height, y));
-
-  //   const position = 1 - y / rect.height;
-  //   ColorLayers.value[draggingIndex.value].position = position;
-  // }
-
-  // function stopDrag() {
-  //   draggingIndex.value = null;
-  //   window.removeEventListener('pointermove', onDrag);
-  //   window.removeEventListener('pointerup', stopDrag);
-  // }
-
-  // function addColor() { 
-  //   if (ColorLayers.value.length >= 10) return;
-  //   ColorLayers.value.push({ color: getRandomColor(), position: ColorLayers.value.length / 10 }); 
-  // }
-
-  // function removeColor(index: number) { ColorLayers.value.splice(index, 1); }
-
-
-
-
-
   import { computed, ref } from 'vue'
-  import getRandomColor from '../Scripts/getRandomColor'
+  import getRandomColor from '../../../utils/getRandomColor'
+  import { getPlanetParameters } from '../../../parameters/PlanetParameters'
 
   type ColorLayer = {
     color: string
     position: number
   }
 
-  /* props + emit */
-  const props = defineProps<{
-    colorLayers: ColorLayer[]
-  }>()
+  const settings = getPlanetParameters()
 
   const emit = defineEmits<{
-    (e: 'update:colorLayers', value: ColorLayer[]): void
+    (e: 'apply'): void
   }>()
 
   /* computed v-model */
   const ColorLayers = computed<ColorLayer[]>({
-    get: () => props.colorLayers,
-    set: value => emit('update:colorLayers', value)
+    get: () => settings.colors,
+    set: value => {
+      settings.colors = value
+    }
   })
 
   /* refs */

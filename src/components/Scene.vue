@@ -5,19 +5,29 @@
 <script setup lang="ts">
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
-import { usePlanet } from '../composables/usePlanet'
+import { onMounted, onBeforeUnmount, ref, shallowRef, markRaw, watch } from 'vue'
+import { PlanetFactory, setPlanetFactory } from '../planet/PlanetFactory'
 import { SceneController } from '../scripts/SceneController'
-import { createStar } from './Star.ts'
-import { createCamera } from './Camera.ts'
+import { createStar } from '../star/StarFactory'
+import { createCamera } from '../camera/CameraFactory'
+import { getPlanetParameters } from '../parameters/PlanetParameters'
 
 const ThreeJScontainer = ref<HTMLDivElement | null>(null)
-const { planet, status } = usePlanet()
+const settings = getPlanetParameters()
+
+let animationFrameId: number | null = null
+let startTime = Date.now()
 
 let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
 let controls: OrbitControls
 let sceneController: SceneController
+let planetFactory: PlanetFactory | null = null
+
+// Используем shallowRef для объектов Three.js, чтобы избежать proxy
+const planetMesh = shallowRef<THREE.Mesh | null>(null)
+const waterMesh = shallowRef<THREE.Mesh | null>(null)
+const cloudMesh = shallowRef<THREE.Mesh | null>(null)
 
 function resize() {
   if (!ThreeJScontainer.value) return
@@ -32,14 +42,19 @@ function resize() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 }
 
-onMounted(() => {
+onMounted(async () => {
   sceneController = new SceneController()
 
-  sceneController.add(new THREE.GridHelper(10, 10));
-  sceneController.add(new THREE.AxesHelper(6));
+  // Помечаем объекты Three.js как нереактивные перед добавлением
+  const gridHelper = markRaw(new THREE.GridHelper(10, 10))
+  const axesHelper = markRaw(new THREE.AxesHelper(6))
+  const star = markRaw(createStar({position:[5,3,-5], intensity: 2, starColor: '#FFFF00'}))
+  
+  sceneController.add(gridHelper)
+  sceneController.add(axesHelper)
+  sceneController.add(star)
 
-  sceneController.add(createStar({position:[5,3,-5], intensity: 2, starColor: '#FFFF00'}))
-
+  // Инициализируем renderer и camera сразу, чтобы сцена появилась
   renderer = new THREE.WebGLRenderer({ antialias: true })
   ThreeJScontainer.value!.appendChild(renderer.domElement)
   
@@ -50,24 +65,115 @@ onMounted(() => {
   resize()
   window.addEventListener('resize', resize)
 
+  // Запускаем анимацию сразу
   animate()
+
+  // Создаем планету асинхронно в фоне
+  planetFactory = new PlanetFactory()
+  setPlanetFactory(planetFactory) // Устанавливаем глобальный экземпляр
+  
+  // Создаем базовую геометрию быстро (синхронно) и показываем сразу
+  planetFactory.createBaseMesh()
+  
+  // Добавляем базовую геометрию сразу (без шума), чтобы планета была видна
+  const planet = planetFactory.getPlanetMesh()
+  if (planet) {
+    planetMesh.value = markRaw(planet)
+    sceneController.add(planetMesh.value)
+  }
+  
+  // Применяем шум и цвета асинхронно в фоне (не блокирует UI)
+  planetFactory.createPlanet().then(() => {
+    // Обновляем меши после генерации
+    const planet = planetFactory!.getPlanetMesh()
+    const water = planetFactory!.getWaterMesh()
+    const cloud = planetFactory!.getCloudMesh()
+    
+    // Обновляем меш планеты если он был пересоздан
+    if (planet && planet !== planetMesh.value) {
+      if (planetMesh.value) {
+        sceneController.remove(planetMesh.value)
+      }
+      planetMesh.value = markRaw(planet)
+      sceneController.add(planetMesh.value)
+    }
+    
+    if (water) {
+      if (waterMesh.value && water !== waterMesh.value) {
+        sceneController.remove(waterMesh.value)
+      }
+      waterMesh.value = markRaw(water)
+      sceneController.add(waterMesh.value)
+    }
+    
+    if (cloud) {
+      if (cloudMesh.value && cloud !== cloudMesh.value) {
+        sceneController.remove(cloudMesh.value)
+      }
+      cloudMesh.value = markRaw(cloud)
+      sceneController.add(cloudMesh.value)
+    }
+  })
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resize)
+  
+  // Отменяем анимацию при размонтировании
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId)
+  }
 
   controls?.dispose()
   renderer?.dispose()
 })
 
-watch(status, () => {
-  if (status.value === 'ready' && planet.value) {
-    sceneController.add(planet.value.mesh);
+watch(planetMesh, (newPlanet) => {
+  if (newPlanet && sceneController) {
+    if (!sceneController.scene.children.includes(newPlanet)) {
+      sceneController.add(newPlanet)
+    }
   }
-})
+}, { immediate: true })
+
+watch(waterMesh, (newWaterMesh) => {
+  if (!sceneController) return;
+  
+  if (newWaterMesh) {
+    if (!sceneController.scene.children.includes(newWaterMesh)) {
+      sceneController.add(newWaterMesh)
+    }
+  } else {
+    const existing = sceneController.scene.children.find(child => child.name === 'WaterMesh')
+    if (existing) {
+      sceneController.scene.remove(existing)
+    }
+  }
+}, { immediate: true })
+
+watch(cloudMesh, (newCloudMesh) => {
+  if (!sceneController) return;
+  
+  if (newCloudMesh) {
+    if (!sceneController.scene.children.includes(newCloudMesh)) {
+      sceneController.add(newCloudMesh)
+    }
+  } else {
+    const existing = sceneController.scene.children.find(child => child.name === 'CloudMesh')
+    if (existing) {
+      sceneController.scene.remove(existing)
+    }
+  }
+}, { immediate: true })
 
 function animate() {
-  requestAnimationFrame(animate);
+  animationFrameId = requestAnimationFrame(animate);
+
+  // Анимация облаков
+  if (planetFactory && settings.clouds && cloudMesh.value) {
+    const currentTime = (Date.now() - startTime) / 1000;
+    planetFactory.animateClouds(currentTime);
+  }
 
   controls.update();
   renderer.render(sceneController.scene, camera);

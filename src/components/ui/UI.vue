@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import Title from './UIcomponents/Title.vue';
-  import Settings from './UIcomponents/Settings.vue';
+  import Title from './UIComponents/Title.vue';
+  import Settings from './UIComponents/Settings.vue';
 </script>
 
 
