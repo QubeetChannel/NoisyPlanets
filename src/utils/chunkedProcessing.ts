@@ -15,14 +15,17 @@
 export function processInChunks<T>(
   items: T[],
   processor: (item: T, index: number) => void,
-  chunkSize: number = 10000,
+  _chunkSize: number = 10000,
   onProgress?: (progress: number) => void
 ): Promise<void> {
   return new Promise((resolve) => {
     // Для небольших массивов обрабатываем синхронно для скорости
     if (items.length < 50000) {
       for (let i = 0; i < items.length; i++) {
-        processor(items[i], i);
+        const item = items[i];
+        if (item !== undefined) {
+          processor(item, i);
+        }
       }
       if (onProgress) {
         onProgress(1);
@@ -37,11 +40,13 @@ export function processInChunks<T>(
 
     function processChunk() {
       const chunkStartTime = performance.now();
-      const startIndex = index;
       
       // Обрабатываем большой чанк, но следим за временем
       while (index < total) {
-        processor(items[index], index);
+        const item = items[index];
+        if (item !== undefined) {
+          processor(item, index);
+        }
         index++;
         
         // Если прошло слишком много времени, делаем паузу

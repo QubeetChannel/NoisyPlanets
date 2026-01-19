@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
 import mulberry32 from '../utils/mulberry32';
 import { getPlanetParameters, type PlanetSettings } from '../parameters/PlanetParameters';
-import { processInChunks, nextFrame } from '../utils/chunkedProcessing';
+import { processInChunks } from '../utils/chunkedProcessing';
 
 /**
  * Класс для управления мешем планеты
@@ -11,7 +11,6 @@ export class PlanetMesh {
   private planetMesh: THREE.Mesh | null = null;
   private waterMesh: THREE.Mesh | null = null;
   private cloudMesh: THREE.Mesh | null = null;
-  private uniquePlanetVertices: Float32Array | null = null;
   private cloudBasePositions: Float32Array | null = null;
   private cloudPositions: THREE.BufferAttribute | null = null;
   private basePositions: Float32Array | null = null;
@@ -50,7 +49,6 @@ export class PlanetMesh {
     this.positions = geometry.attributes.position as THREE.BufferAttribute;
     // Сохраняем только уникальные вершины
     this.basePositions = this.positions.array.slice() as Float32Array;
-    this.uniquePlanetVertices = this.basePositions;
   }
 
   /**

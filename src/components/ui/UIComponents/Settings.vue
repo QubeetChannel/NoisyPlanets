@@ -3,10 +3,7 @@
   import SetTitle from './Set-Title.vue';
   import SetParameters from './Set-Parameters.vue';
   import SetColors from './Set-Colors.vue';
-  import { getPlanetParameters } from '../../../parameters/PlanetParameters';
   import { getPlanetFactory } from '../../../planet/PlanetFactory';
-
-  const settings = getPlanetParameters();
 
   const isGenerating = ref(false)
 

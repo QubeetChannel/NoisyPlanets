@@ -118,9 +118,12 @@
     y = Math.max(0, Math.min(rect.height, y))
 
     const next = [...ColorLayers.value]
-    next[draggingIndex.value] = {
-      ...next[draggingIndex.value],
-      position: 1 - y / rect.height
+    const currentLayer = next[draggingIndex.value]
+    if (currentLayer) {
+      next[draggingIndex.value] = {
+        ...currentLayer,
+        position: 1 - y / rect.height
+      }
     }
 
     ColorLayers.value = next
