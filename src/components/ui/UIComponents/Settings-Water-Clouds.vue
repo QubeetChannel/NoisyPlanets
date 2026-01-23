@@ -7,7 +7,6 @@
     <span class="text-xl font-bold text-center">Water & Clouds</span>
 
     <div class="my-2"> 
-      <!-- Water Settings -->
       <div class="mb-4">
         <h3 class="text-lg font-semibold mb-2">Water</h3>
         <label class="
@@ -54,7 +53,6 @@
         </label>
       </div>
 
-      <!-- Clouds Settings -->
       <div>
         <h3 class="text-lg font-semibold mb-2">Clouds</h3>
         <label class="
@@ -150,7 +148,6 @@ function handleApply() {
   planetFactory.updateCloudsHeight()
 }
 
-// Синхронизация при изменении settings
 watch(() => settings.waterHeight, (newVal) => {
   waterLevelRange.value = Math.round(newVal * 100)
 })

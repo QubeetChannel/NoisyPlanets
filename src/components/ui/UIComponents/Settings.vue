@@ -7,14 +7,11 @@
 
   const isGenerating = ref(false)
 
-  // Применение функций handle не останавливает сцену, а вызывает исполнение функций в другом потоке
   async function handleGeneratePlanet() {
     if (isGenerating.value) return
     isGenerating.value = true
     try {
       const planetFactory = getPlanetFactory();
-      // При изменении Scale нужно пересоздать меш планеты
-      // Вызываем createPlanet() который пересоздаст меш если нужно и применит шум
       await planetFactory.createPlanet();
     } finally {
       isGenerating.value = false
@@ -28,12 +25,10 @@
       
       if (!planetMesh) {
         console.warn('handleApplyColors: planet mesh not available, creating planet first...');
-        // Если планета не создана, создаем её сначала
         await handleGeneratePlanet();
         return;
       }
       
-      // Вызываем PlanetMesh.updateColors() при изменении цветовых маркеров (асинхронно)
       await planetFactory.updateColors();
     } catch (error) {
       console.error('Error applying colors:', error);

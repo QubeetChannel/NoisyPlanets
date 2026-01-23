@@ -299,19 +299,16 @@ function updateScaleRange() {
 
 function updateWaterHeight() {
   settings.waterHeight = waterHeightRange.value / 100
-  // Применяем изменение высоты воды сразу
   const planetFactory = getPlanetFactory()
   planetFactory.updateWaterHeight()
 }
 
 function updateWaterHeightRange() {
   waterHeightRange.value = Math.round(settings.waterHeight * 100)
-  // Применяем изменение высоты воды сразу
   const planetFactory = getPlanetFactory()
   planetFactory.updateWaterHeight()
 }
 
-// Используем событие для вызова handleGeneratePlanet из Settings.vue
 const props = defineProps<{
   isGenerating?: boolean
 }>()
@@ -325,7 +322,6 @@ function handleGenerate() {
   emit('generate')
 }
 
-// Синхронизация при изменении settings
 watch(() => settings.frequency, (newVal) => {
   frequencyRange.value = Math.max(2, Math.min(20, newVal))
 })
@@ -348,7 +344,6 @@ watch(() => settings.lacunarity, (newVal) => {
 
 watch(() => settings.scale, (newVal) => {
   scaleRange.value = Math.max(32, Math.min(256, newVal))
-  // При изменении Scale нужно пересоздать планету
   if (scaleRange.value !== newVal) {
     scaleRange.value = newVal
   }
