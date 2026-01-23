@@ -6,7 +6,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { onMounted, onBeforeUnmount, ref, shallowRef, markRaw, watch } from 'vue'
-import { PlanetFactory, setPlanetFactory } from '../planet/PlanetFactory'
+import { PlanetFactory, setPlanetFactory, getPlanetFactory } from '../planet/PlanetFactory'
 import { SceneController } from '../scripts/SceneController'
 import { createStar } from '../star/StarFactory'
 import { createCamera } from '../camera/CameraFactory'
@@ -84,36 +84,39 @@ onMounted(async () => {
   
   // Применяем шум и цвета асинхронно в фоне (не блокирует UI)
   planetFactory.createPlanet().then(() => {
-    // Обновляем меши после генерации
-    const planet = planetFactory!.getPlanetMesh()
-    const water = planetFactory!.getWaterMesh()
-    const cloud = planetFactory!.getCloudMesh()
-    
-    // Обновляем меш планеты если он был пересоздан
-    if (planet && planet !== planetMesh.value) {
-      if (planetMesh.value) {
-        sceneController.remove(planetMesh.value)
-      }
-      planetMesh.value = markRaw(planet)
-      sceneController.add(planetMesh.value)
-    }
-    
-    if (water) {
-      if (waterMesh.value && water !== waterMesh.value) {
-        sceneController.remove(waterMesh.value)
-      }
-      waterMesh.value = markRaw(water)
-      sceneController.add(waterMesh.value)
-    }
-    
-    if (cloud) {
-      if (cloudMesh.value && cloud !== cloudMesh.value) {
-        sceneController.remove(cloudMesh.value)
-      }
-      cloudMesh.value = markRaw(cloud)
-      sceneController.add(cloudMesh.value)
-    }
+    updatePlanetMeshes();
   })
+  
+  // Слушаем обновления планеты через глобальный экземпляр
+  // Переопределяем методы для автоматического обновления сцены
+  const originalCreatePlanet = planetFactory.createPlanet.bind(planetFactory);
+  planetFactory.createPlanet = async function() {
+    await originalCreatePlanet();
+    updatePlanetMeshes();
+  };
+  
+  const originalUpdateColors = planetFactory.updateColors.bind(planetFactory);
+  planetFactory.updateColors = async function() {
+    await originalUpdateColors();
+    updatePlanetMeshes();
+  };
+  
+  // Обновляем глобальный экземпляр (он должен быть тем же, что мы только что установили)
+  // Но на всякий случай переопределяем методы и для глобального экземпляра
+  const globalFactory = getPlanetFactory();
+  if (globalFactory) {
+    const globalOriginalCreatePlanet = globalFactory.createPlanet.bind(globalFactory);
+    globalFactory.createPlanet = async function() {
+      await globalOriginalCreatePlanet();
+      updatePlanetMeshes();
+    };
+    
+    const globalOriginalUpdateColors = globalFactory.updateColors.bind(globalFactory);
+    globalFactory.updateColors = async function() {
+      await globalOriginalUpdateColors();
+      updatePlanetMeshes();
+    };
+  }
 })
 
 onBeforeUnmount(() => {
@@ -165,6 +168,68 @@ watch(cloudMesh, (newCloudMesh) => {
     }
   }
 }, { immediate: true })
+
+// Функция для обновления мешей в сцене после изменения планеты
+function updatePlanetMeshes() {
+  if (!planetFactory || !sceneController) return;
+  
+  const planet = planetFactory.getPlanetMesh();
+  const water = planetFactory.getWaterMesh();
+  const cloud = planetFactory.getCloudMesh();
+  
+  // Обновляем меш планеты
+  if (planet) {
+    // Если меш изменился, обновляем ссылку
+    if (planet !== planetMesh.value) {
+      if (planetMesh.value) {
+        sceneController.remove(planetMesh.value);
+      }
+      planetMesh.value = markRaw(planet);
+      sceneController.add(planetMesh.value);
+    } else {
+      // Если меш тот же, но геометрия обновилась, принудительно обновляем
+      if (planet.geometry) {
+        const positionAttr = planet.geometry.attributes.position;
+        if (positionAttr) {
+          positionAttr.needsUpdate = true;
+        }
+        const colorAttr = planet.geometry.attributes.color;
+        if (colorAttr) {
+          colorAttr.needsUpdate = true;
+        }
+        planet.geometry.computeVertexNormals();
+      }
+    }
+  }
+  
+  // Обновляем меш воды
+  if (water) {
+    if (water !== waterMesh.value) {
+      if (waterMesh.value) {
+        sceneController.remove(waterMesh.value);
+      }
+      waterMesh.value = markRaw(water);
+      sceneController.add(waterMesh.value);
+    }
+  } else if (waterMesh.value) {
+    sceneController.remove(waterMesh.value);
+    waterMesh.value = null;
+  }
+  
+  // Обновляем меш облаков
+  if (cloud) {
+    if (cloud !== cloudMesh.value) {
+      if (cloudMesh.value) {
+        sceneController.remove(cloudMesh.value);
+      }
+      cloudMesh.value = markRaw(cloud);
+      sceneController.add(cloudMesh.value);
+    }
+  } else if (cloudMesh.value) {
+    sceneController.remove(cloudMesh.value);
+    cloudMesh.value = null;
+  }
+}
 
 function animate() {
   animationFrameId = requestAnimationFrame(animate);

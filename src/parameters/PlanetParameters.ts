@@ -42,7 +42,7 @@ function createSettings(): PlanetSettings {
     persistence: 0.55,
     lacunarity: 2.0,
     water: true,
-    waterHeight: 0.2,  // Уровень воды: 0 = радиус 1, 1 = радиус 2
+    waterHeight: 0.5,  // Уровень воды: 0 = радиус 1, 1 = радиус 2
     clouds: false,      // Облака выключены по умолчанию
     cloudHeight: 0.5,  // Уровень облаков: 0 = радиус 2, 1 = радиус 3
     colors: [
