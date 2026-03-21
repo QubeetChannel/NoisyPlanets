@@ -21,7 +21,6 @@ export class PlanetFactory {
 
   async createPlanet(): Promise<void> {
     const settings = getPlanetParameters();
-<<<<<<< HEAD
 
     const mesh = this.planetMesh.getPlanetMesh();
     const needNewGeometry = !mesh || this.planetGeometryScale !== settings.scale;
@@ -31,25 +30,12 @@ export class PlanetFactory {
         this.planetMesh.disposeWaterAndCloudMeshes();
       }
       await nextFrame();
-=======
-    
-    const currentMesh = this.planetMesh.getPlanetMesh();
-    if (!currentMesh) {
-      this.planetMesh.createMesh();
-    } else {
->>>>>>> 92ea9f39a9320ccc693c8e0a2482edd794163619
       this.planetMesh.createMesh();
       this.planetGeometryScale = settings.scale;
     }
-<<<<<<< HEAD
 
     await this.planetMesh.updateVertices(settings.seed);
 
-=======
-    
-    await this.planetMesh.updateVertices(settings.seed);
-    
->>>>>>> 92ea9f39a9320ccc693c8e0a2482edd794163619
     this.planetMesh.updateWaterHeight();
     await this.planetMesh.updateCloudsHeight();
   }
@@ -78,16 +64,8 @@ export class PlanetFactory {
     this.planetMesh.updateWaterHeight();
   }
 
-<<<<<<< HEAD
-  /**
-   * Обновить высоту облаков
-   */
   async updateCloudsHeight(): Promise<void> {
     await this.planetMesh.updateCloudsHeight();
-=======
-  updateCloudsHeight(): void {
-    this.planetMesh.updateCloudsHeight();
->>>>>>> 92ea9f39a9320ccc693c8e0a2482edd794163619
   }
 
   animateClouds(time: number): void {
