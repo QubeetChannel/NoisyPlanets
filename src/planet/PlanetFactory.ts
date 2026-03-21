@@ -1,5 +1,6 @@
 import { PlanetMesh } from './PlanetMesh';
 import { getPlanetParameters } from '../parameters/PlanetParameters';
+import { nextFrame } from '../utils/chunkedProcessing';
 import * as THREE from 'three';
 
 // Глобальный экземпляр PlanetFactory (singleton)
@@ -10,6 +11,8 @@ let planetFactoryInstance: PlanetFactory | null = null;
  */
 export class PlanetFactory {
   private planetMesh: PlanetMesh;
+  /** Scale геометрии планеты после последнего createMesh (не пересоздаём икосаэдр при смене только seed) */
+  private planetGeometryScale: number | null = null;
 
   constructor() {
     this.planetMesh = new PlanetMesh();
@@ -20,6 +23,7 @@ export class PlanetFactory {
    */
   createBaseMesh(): void {
     this.planetMesh.createMesh();
+    this.planetGeometryScale = getPlanetParameters().scale;
   }
 
   /**
@@ -28,23 +32,23 @@ export class PlanetFactory {
    */
   async createPlanet(): Promise<void> {
     const settings = getPlanetParameters();
-    
-    // Если меш еще не создан или нужно пересоздать из-за изменения Scale, создаем его
-    const currentMesh = this.planetMesh.getPlanetMesh();
-    if (!currentMesh) {
+
+    const mesh = this.planetMesh.getPlanetMesh();
+    const needNewGeometry = !mesh || this.planetGeometryScale !== settings.scale;
+
+    if (needNewGeometry) {
+      if (mesh && this.planetGeometryScale !== null && this.planetGeometryScale !== settings.scale) {
+        this.planetMesh.disposeWaterAndCloudMeshes();
+      }
+      await nextFrame();
       this.planetMesh.createMesh();
-    } else {
-      // Проверяем, нужно ли пересоздать меш из-за изменения Scale
-      // Для этого нужно пересоздать меш (Scale влияет на количество сегментов)
-      this.planetMesh.createMesh();
+      this.planetGeometryScale = settings.scale;
     }
-    
-    // Применяем шум к вершинам (асинхронно для больших планет, синхронно для маленьких)
+
     await this.planetMesh.updateVertices(settings.seed);
-    
-    // Обновляем воду и облака
+
     this.planetMesh.updateWaterHeight();
-    this.planetMesh.updateCloudsHeight();
+    await this.planetMesh.updateCloudsHeight();
   }
 
   /**
@@ -92,8 +96,8 @@ export class PlanetFactory {
   /**
    * Обновить высоту облаков
    */
-  updateCloudsHeight(): void {
-    this.planetMesh.updateCloudsHeight();
+  async updateCloudsHeight(): Promise<void> {
+    await this.planetMesh.updateCloudsHeight();
   }
 
   /**

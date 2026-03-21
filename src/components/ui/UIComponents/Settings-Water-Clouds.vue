@@ -144,10 +144,10 @@ function updateCloudLevelRange() {
   cloudLevelRange.value = Math.round(settings.cloudHeight * 100)
 }
 
-function handleApply() {
+async function handleApply() {
   const planetFactory = getPlanetFactory()
   planetFactory.updateWaterHeight()
-  planetFactory.updateCloudsHeight()
+  await planetFactory.updateCloudsHeight()
 }
 
 // Синхронизация при изменении settings

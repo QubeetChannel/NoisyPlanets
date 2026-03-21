@@ -1,20 +1,20 @@
 <script setup lang="ts">
-  import { ref } from 'vue';
+  import { ref, nextTick } from 'vue';
   import SetTitle from './Set-Title.vue';
   import SetParameters from './Set-Parameters.vue';
   import SetColors from './Set-Colors.vue';
   import { getPlanetFactory } from '../../../planet/PlanetFactory';
+  import { nextFrame } from '../../../utils/chunkedProcessing';
 
   const isGenerating = ref(false)
 
-  // Применение функций handle не останавливает сцену, а вызывает исполнение функций в другом потоке
   async function handleGeneratePlanet() {
     if (isGenerating.value) return
     isGenerating.value = true
+    await nextTick()
+    await nextFrame()
     try {
       const planetFactory = getPlanetFactory();
-      // При изменении Scale нужно пересоздать меш планеты
-      // Вызываем createPlanet() который пересоздаст меш если нужно и применит шум
       await planetFactory.createPlanet();
     } finally {
       isGenerating.value = false
