@@ -28,12 +28,10 @@
       
       if (!planetMesh) {
         console.warn('handleApplyColors: planet mesh not available, creating planet first...');
-        // Если планета не создана, создаем её сначала
         await handleGeneratePlanet();
         return;
       }
       
-      // Вызываем PlanetMesh.updateColors() при изменении цветовых маркеров (асинхронно)
       await planetFactory.updateColors();
     } catch (error) {
       console.error('Error applying colors:', error);
